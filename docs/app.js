@@ -6,8 +6,13 @@ const GROUPS={
  D:{label:"政府訊息",accent:"#7566a8",source:"市府災害應變訊息｜14:20 發布",headline:"目前尚無大規模淹水災情",detail:"局部通報仍在查證中；下一次統一更新預計於 14:40 發布。"}
 };
 const CHOICES=[{id:"stay-home",label:"請全區居民暫停外出"},{id:"targeted-action",label:"請低窪區移車，避開地下道"},{id:"normal-travel",label:"目前無大規模災情，可正常通行"},{id:"wait",label:"暫不發布，等待資料一致"}];
-const CONTEXT=["強降雨帶集中在東側，未來四十分鐘仍可能持續。","社群照片已確認為當日現場，但只代表一處低窪地下道。","水位站持續上升，卻不能直接推估另一套排水系統的積水深度。","市府訊息早於雨勢高峰；『無大規模災情』不等於沒有局部風險。"];
-const PHASES=[["welcome","觀眾進場"],["round1","第一次決策"],["reveal","揭露差異"],["context","完整脈絡"],["round2","再次決策"],["results","結果與框架"]];
+const FULL_PICTURE=[
+ {code:"A",title:"強降雨仍在往東側集中",text:"未來四十分鐘，北河市東半部仍可能持續出現強降雨；但區域預報無法直接告訴我們每一條道路的積水情況。"},
+ {code:"B",title:"東安地下道已出現明顯積水",text:"社群照片已確認是當日現場，水深約到輪胎一半；但這張照片只代表一處低窪地下道，不能推論全市都一樣。"},
+ {code:"C",title:"附近水位仍在快速上升",text:"自動水位站十分鐘上升 0.18 公尺；但測站與東安地下道屬於不同排水系統，不能直接換算地下道水深。"},
+ {code:"D",title:"市府訊息發布在雨勢高峰之前",text:"14:20 尚未出現大規模淹水通報；這不等於沒有局部風險，當時部分現場資訊仍在查證。"}
+];
+const PHASES=[["welcome","觀眾進場"],["round1","第一次決策"],["reveal","差異與完整脈絡"],["round2","再次決策"],["results","結果與框架"]];
 const app=document.querySelector("#app"),params=new URLSearchParams(location.search),groupCode=(params.get("group")||"").toUpperCase(),isHost=params.get("view")==="host";
 let participantPhase="",participantTimer,hostTimer,answers={1:{choice:"",confidence:3,submitted:false},2:{choice:"",confidence:3,submitted:false}};
 
@@ -23,8 +28,7 @@ function decision(round){const a=answers[round];return `<section class="decision
 function participant(phase){const g=GROUPS[groupCode];if(!g){app.innerHTML=`<main class="mobile-shell"><section class="waiting-card"><h1>連結不完整</h1><p>請重新掃描主持人提供的 QR Code。</p></section></main>`;return}let body="";
  if(phase==="welcome")body=`<section class="waiting-card"><div class="pulse"></div><p class="step-label">已進入體驗</p><h1>請保留目前畫面</h1><p>每個人取得的資訊可能不同，請暫時不要交換手機畫面。</p><small class="quiet">等待主持人開始</small></section>`;
  if(phase==="round1")body=info(g)+decision(1);
- if(phase==="reveal")body=`<section class="context-card"><p class="step-label">資訊揭露</p><h1>我們面對同一場雨，卻看見四種現實。</h1><div class="headline-stack">${Object.entries(GROUPS).map(([c,x])=>`<div class="headline-item"><b style="background:${x.accent}">${c}</b><span>${x.headline}</span></div>`).join("")}</div><p>每一則都包含真實資訊，也都有無法單獨回答的問題。</p></section>`;
- if(phase==="context")body=`<section class="context-card"><p class="step-label">補上完整脈絡</p><h1>更多資訊，不是推翻前面；而是讓限制變得可見。</h1><div class="context-list">${CONTEXT.map((x,i)=>`<div class="context-item"><b>${i+1}</b><span>${x}</span></div>`).join("")}</div><p>下一步，請重新做一次決定。</p></section>`;
+ if(phase==="reveal"||phase==="context")body=`<section class="context-card combined-context"><p class="step-label">揭露差異與完整脈絡</p><h1>把四則資訊放在一起，完整景象才開始出現。</h1><div class="picture-grid">${FULL_PICTURE.map(x=>`<article class="picture-card" style="--card-accent:${GROUPS[x.code].accent}"><span class="picture-time">${GROUPS[x.code].source}</span><h2>${x.title}</h2><p>${x.text}</p></article>`).join("")}</div><p class="context-next">現在，請帶著這幅較完整的景象，再做一次決定。</p></section>`;
  if(phase==="round2")body=decision(2);
  if(phase==="results")body=`<section class="framework-card"><p class="step-label">公共溝通框架</p><h1>讓資訊從「被發布」，走到「能行動」。</h1><div class="framework-flow"><div class="framework-step"><b>1</b><span>感受與經驗</span></div><div class="framework-step"><b>2</b><span>數據連結與風險認識</span></div><div class="framework-step"><b>3</b><span>賦權與共同面對</span></div></div><p>公共溝通不是要求所有人相信同一個答案，而是讓人理解資訊從哪裡來、限制在哪裡，以及現在能做什麼。</p></section>`;
  app.innerHTML=`<main class="mobile-shell" style="--accent:${g.accent}"><header class="topbar"><span class="brand">水視界</span><span class="session">場次 ${SESSION}</span></header>${body}</main>`;bindDecision()}
